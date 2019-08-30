@@ -1,0 +1,8 @@
+{"namespace": "example.avro.messages",
+ "type": "record",
+ "name": "Post",
+ "fields": [
+     {"name": "id", "type": "int"},
+     {"name": "timestamp",  "type": "long"}
+ ]
+}
