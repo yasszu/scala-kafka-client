@@ -1,6 +1,7 @@
 package app
 
 import akka.actor.ActorSystem
+import app.kafka.ConsumerManager
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext

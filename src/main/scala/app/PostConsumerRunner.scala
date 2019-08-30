@@ -1,5 +1,6 @@
 package app
 
+import app.kafka.{Consumer, ConsumerImpl, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
 import example.avro.messages.Post
 
 class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerRunner[String, Post] {

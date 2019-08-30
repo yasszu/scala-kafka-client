@@ -1,13 +1,13 @@
-package app
+package app.kafka
 
 import akka.Done
 import org.apache.kafka.common.errors.WakeupException
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 trait ConsumerRunner[K, V] extends ConsumerServer {
   self =>

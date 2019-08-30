@@ -1,4 +1,4 @@
-package app
+package app.kafka
 
 import akka.Done
 

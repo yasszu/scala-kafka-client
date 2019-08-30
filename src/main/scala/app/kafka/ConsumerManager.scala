@@ -1,4 +1,4 @@
-package app
+package app.kafka
 
 import org.slf4j.{Logger, LoggerFactory}
 
