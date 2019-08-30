@@ -71,8 +71,10 @@ object ConsumerImpl {
 
   val GROUP_ID = "group.id"
 
-  def apply[K, V](props: Map[String, String]): Consumer[K, V] = new ConsumerImpl[K, V](props)
+  def groupIdProp(groupId: String): Map[String, String] = Map(GROUP_ID -> groupId)
 
-  def apply[K, V](groupId: String): Consumer[K, V] = new ConsumerImpl[K, V](Map(GROUP_ID -> groupId))
+  def apply[K, V](groupId: String, props: Map[String, String]): Consumer[K, V] = new ConsumerImpl[K, V](props ++ groupIdProp(groupId))
+
+  def apply[K, V](groupId: String): Consumer[K, V] = new ConsumerImpl[K, V](groupIdProp(groupId))
 
 }

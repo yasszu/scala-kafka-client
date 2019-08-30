@@ -12,7 +12,7 @@ class ConsumerManager extends Delay {
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
-  private var servers: Map[Int, ConsumerApplication] = Map.empty
+  private var servers: Map[Int, ConsumerServer] = Map.empty
 
   private var factories: Map[Int, ConsumerServerFactory] = Map.empty
 

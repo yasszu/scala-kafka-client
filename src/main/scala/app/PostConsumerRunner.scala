@@ -2,11 +2,9 @@ package app
 
 import example.avro.messages.Post
 
-class PostConsumerServer() extends ConsumerServer[String, Post] {
+class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerRunner[String, Post] {
 
   override val topic: String = "post"
-
-  override val consumer: Consumer[String, Post] = ConsumerImpl[String, Post]("PostService")
 
   override def subscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
@@ -18,6 +16,8 @@ class PostConsumerServer() extends ConsumerServer[String, Post] {
 
 object PostConsumerServerFactory extends ConsumerServerFactory {
 
-  override def generate(): ConsumerApplication = new PostConsumerServer()
+  def createConsumer(groupId: String): Consumer[String, Post] = ConsumerImpl[String, Post](groupId)
+
+  override def generate(): ConsumerServer = new PostConsumerRunner(createConsumer("PostService"))
 
 }
