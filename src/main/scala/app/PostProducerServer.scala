@@ -1,7 +1,7 @@
 package app
 
 import akka.actor.{ActorSystem, Cancellable}
-import app.kafka.ProducerImpl
+import app.kafka.{Producer, ProducerImpl}
 import example.avro.messages.Post
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.{Logger, LoggerFactory}
@@ -17,7 +17,7 @@ class PostProducerServer {
 
   val topic: String = "post"
 
-  val producer: ProducerImpl[String, Post] = ProducerImpl[String, Post]()
+  val producer: Producer[String, Post] = Producer()
 
   def run()(implicit ec: ExecutionContext, system: ActorSystem): Cancellable = {
     logger.info("Start a producer")

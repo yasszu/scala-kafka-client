@@ -20,6 +20,18 @@ trait Consumer[K, V] {
 
 }
 
+object Consumer {
+
+  val GROUP_ID = "group.id"
+
+  def groupIdProp(groupId: String): Map[String, String] = Map(GROUP_ID -> groupId)
+
+  def apply[K, V](groupId: String, props: Map[String, String]): Consumer[K, V] = new ConsumerImpl[K, V](props ++ groupIdProp(groupId))
+
+  def apply[K, V](groupId: String): Consumer[K, V] = new ConsumerImpl[K, V](groupIdProp(groupId))
+
+}
+
 class ConsumerImpl[K, V](props: Map[String, String]) extends Consumer[K, V] {
 
   lazy val config: Config = ConfigFactory.load().getConfig("kafka.consumer")
@@ -64,17 +76,5 @@ class ConsumerImpl[K, V](props: Map[String, String]) extends Consumer[K, V] {
   override def wakeup(): Unit = consumer.wakeup()
 
   override def close(): Unit = consumer.close()
-
-}
-
-object ConsumerImpl {
-
-  val GROUP_ID = "group.id"
-
-  def groupIdProp(groupId: String): Map[String, String] = Map(GROUP_ID -> groupId)
-
-  def apply[K, V](groupId: String, props: Map[String, String]): Consumer[K, V] = new ConsumerImpl[K, V](props ++ groupIdProp(groupId))
-
-  def apply[K, V](groupId: String): Consumer[K, V] = new ConsumerImpl[K, V](groupIdProp(groupId))
 
 }

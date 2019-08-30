@@ -1,6 +1,6 @@
 package app
 
-import app.kafka.{Consumer, ConsumerImpl, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
+import app.kafka.{Consumer, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
 import example.avro.messages.Post
 
 class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerRunner[String, Post] {
@@ -17,7 +17,7 @@ class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerR
 
 object PostConsumerServerFactory extends ConsumerServerFactory {
 
-  def createConsumer(groupId: String): Consumer[String, Post] = ConsumerImpl(groupId)
+  def createConsumer(groupId: String): Consumer[String, Post] = Consumer(groupId)
 
   override def generate(): ConsumerServer = new PostConsumerRunner(createConsumer("PostService"))
 

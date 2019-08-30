@@ -11,6 +11,12 @@ trait Producer[K, V] {
 
 }
 
+object Producer {
+
+  def apply[K, V](): Producer[K, V] = new ProducerImpl(Map.empty)
+
+}
+
 class ProducerImpl[K, V](props: Map[String, String]) extends Producer[K, V] {
 
   lazy val config: Config = ConfigFactory.load().getConfig("kafka.producer")
@@ -40,11 +46,5 @@ class ProducerImpl[K, V](props: Map[String, String]) extends Producer[K, V] {
   }
 
   override def send(record: ProducerRecord[K, V]): Unit = producer.send(record)
-
-}
-
-object ProducerImpl {
-
-  def apply[K, V](): ProducerImpl[K, V] = new ProducerImpl(Map.empty)
 
 }
