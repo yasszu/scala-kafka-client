@@ -17,7 +17,7 @@ class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerR
 
 object PostConsumerServerFactory extends ConsumerServerFactory {
 
-  def createConsumer(groupId: String): Consumer[String, Post] = ConsumerImpl[String, Post](groupId)
+  def createConsumer(groupId: String): Consumer[String, Post] = ConsumerImpl(groupId)
 
   override def generate(): ConsumerServer = new PostConsumerRunner(createConsumer("PostService"))
 
