@@ -2,14 +2,12 @@ package app
 
 import akka.actor.ActorSystem
 import app.kafka.ConsumerManager
-import org.slf4j.{Logger, LoggerFactory}
+import app.util.Logging
 
 import scala.concurrent.ExecutionContext
 
-object Main extends App {
+object Main extends App with Logging {
   self =>
-
-  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
   implicit val system: ActorSystem = ActorSystem("kafka")
   implicit val ec: ExecutionContext = system.dispatcher
@@ -21,12 +19,12 @@ object Main extends App {
   postProducerServer.run()
 
   // Start a consumer
-  consumerManger.addFactory(PostConsumerServerFactory)
+  consumerManger.addFactory(new PostConsumerServerFactory())
   consumerManger.runAll()
 
   // Stop the consumer when the VM exits
   sys.addShutdownHook {
-    logger.info("Stopping consumer...")
+    log.info("Stopping consumer...")
     consumerManger.shutdown()
     system.terminate()
   }

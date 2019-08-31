@@ -1,18 +1,16 @@
 package app.kafka
 
 import akka.Done
+import app.util.Logging
 import org.apache.kafka.common.errors.WakeupException
-import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
 
-trait ConsumerRunner[K, V] extends ConsumerServer {
+trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
   self =>
-
-  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
   val timeout: FiniteDuration = 1000 milliseconds
 
@@ -30,6 +28,7 @@ trait ConsumerRunner[K, V] extends ConsumerServer {
       val done = Try {
         while (true) {
           subscribe(consumer.poll(timeout.toMillis))
+          consumer.commit()
         }
         Done
       } recoverWith {
@@ -50,31 +49,32 @@ trait ConsumerRunner[K, V] extends ConsumerServer {
     promise.future
   }
 
+  def subscribe(records: Iterator[(K, V)]): Unit
+
   def handleNonFatalError(error: Throwable): Try[Done] = {
     Failure(error)
   }
 
   override def onStart(): Unit = {
-    logger.info("Start a consumer")
+    log.info("Start a consumer")
     consumer.subscribe(topic)
   }
 
   override def onStop(): Unit = {
-    logger.info("Stop a consumer")
+    log.info("Stop a consumer")
     consumer.wakeup()
   }
 
   override def onClose(): Unit = {
-    logger.info("Close a consumer")
+    log.info("Close a consumer")
+    consumer.commit()
     consumer.close()
   }
 
 
   override def onError(e: Throwable): Unit = {
-    logger.error("Non fatal error occurred")
+    log.error("Non fatal error occurred")
     e.printStackTrace()
   }
-
-  def subscribe(records: Iterator[(K, V)]): Unit
 
 }

@@ -1,20 +1,20 @@
 package app.kafka
 
-import org.slf4j.{Logger, LoggerFactory}
+import app.util.{Delay, Logging}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class ConsumerManager extends Delay {
+class ConsumerManager extends Delay with Logging {
   self =>
-
-  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
   private var servers: Map[Int, ConsumerServer] = Map.empty
 
   private var factories: Map[Int, ConsumerServerFactory] = Map.empty
+
+  private val DELAY_FOR_RETRY = 15 seconds
 
   def addFactory(factory: ConsumerServerFactory): Unit = {
     val pid = factories.size + 1
@@ -36,32 +36,34 @@ class ConsumerManager extends Delay {
   private def run(pid: Int)(implicit ec: ExecutionContext): Unit = {
     servers(pid).run() onComplete {
       case Success(_) =>
-        logger.info("Stopped successfully")
+        log.info("Stopped successfully")
       case Failure(_) =>
-        logger.error("Non fatal error occurred")
+        log.error("Non fatal error occurred")
         resetServer(pid)
-        logger.error("Waiting for restating a consumer")
-        delay(15 seconds) {
-          logger.info("Restart consumer")
+        log.error("Waiting for restating a consumer")
+        delay(DELAY_FOR_RETRY) {
+          log.info("Restart consumer")
           run(pid)
         }
     }
   }
 
   private def resetServer(pid: Int): Unit = {
-    logger.info("Reset consumer server")
+    log.info("Reset consumer server")
     servers -= pid
     val server = factories(pid).generate()
     servers += (pid -> server)
   }
 
   def shutdown(): Unit = {
-    logger.info("Shutdown consumers")
+    log.info("Shutdown consumers")
     servers.values.foreach(_.onStop())
   }
 
 }
 
 object ConsumerManager {
+
   def apply(): ConsumerManager = new ConsumerManager()
+
 }

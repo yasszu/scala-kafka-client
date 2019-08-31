@@ -2,27 +2,25 @@ package app
 
 import akka.actor.{ActorSystem, Cancellable}
 import app.kafka.Producer
+import app.util.Logging
 import example.avro.messages.Post
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class PostProducerServer {
+class PostProducerServer extends Logging {
   self =>
-
-  val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
   val topic: String = "posts"
 
   val producer: Producer[String, Post] = Producer()
 
   def run()(implicit ec: ExecutionContext, system: ActorSystem): Cancellable = {
-    logger.info("Start a producer")
+    log.info("Start a producer")
     system.scheduler.schedule(1 seconds, 1 seconds) {
-      logger.info("Send messages")
+      log.info("Send messages")
       sendRecords(5)
     }
   }

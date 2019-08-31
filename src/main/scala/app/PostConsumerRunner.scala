@@ -1,6 +1,6 @@
 package app
 
-import app.kafka.{Consumer, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
+import app.kafka.{Consumer, ConsumerImpl, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
 import example.avro.messages.Post
 
 class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerRunner[String, Post] {
@@ -9,16 +9,18 @@ class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerR
 
   override def subscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
-      logger.info(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
+      log.info(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
     }
   }
 
 }
 
-object PostConsumerServerFactory extends ConsumerServerFactory {
+class PostConsumerServerFactory extends ConsumerServerFactory {
 
-  def createConsumer(groupId: String): Consumer[String, Post] = Consumer(groupId)
+  val GROUP_ID = "PostService"
 
-  override def generate(): ConsumerServer = new PostConsumerRunner(createConsumer("PostService"))
+  def consumer = new ConsumerImpl[String, Post](GROUP_ID)
+
+  override def generate(): ConsumerServer = new PostConsumerRunner(consumer)
 
 }

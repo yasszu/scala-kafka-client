@@ -1,4 +1,4 @@
-package app.kafka
+package app.util
 
 import java.util.{Timer, TimerTask}
 
