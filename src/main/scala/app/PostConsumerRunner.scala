@@ -5,11 +5,11 @@ import example.avro.messages.Post
 
 class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerRunner[String, Post] {
 
-  override val topic: String = "post"
+  override val topic: String = "posts"
 
   override def subscribe(records: Iterator[(String, Post)]): Unit = {
     records.foreach { case (key: String, post: Post) =>
-      println(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
+      logger.info(s"key:$key, value: {id:${post.getId}, timestamp: ${post.getTimestamp}}")
     }
   }
 

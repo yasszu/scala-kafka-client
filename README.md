@@ -6,12 +6,15 @@ Start a container
 ```
 $ docker-compose up -d
 ```
-Send a message manually
+Create topic
 ```
-$ docker-compose exec kafka sh
-> /opt/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic post
-This is a message
-This is another message
+$ docker-compose exec broker kafka-topics --create --zookeeper \
+  zookeeper:2181 --replication-factor 1 --partitions 1 --topic users
+```
+
+Show topics
+```
+$ docker-compose exec broker kafka-topics --list --bootstrap-server localhost:9092
 ```
 
 ## Start the application

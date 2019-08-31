@@ -1,7 +1,7 @@
 package app
 
 import akka.actor.{ActorSystem, Cancellable}
-import app.kafka.{Producer, ProducerImpl}
+import app.kafka.Producer
 import example.avro.messages.Post
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.{Logger, LoggerFactory}
@@ -15,7 +15,7 @@ class PostProducerServer {
 
   val logger: Logger = LoggerFactory.getLogger(self.getClass)
 
-  val topic: String = "post"
+  val topic: String = "posts"
 
   val producer: Producer[String, Post] = Producer()
 
