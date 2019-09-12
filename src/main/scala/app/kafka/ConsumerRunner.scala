@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
   self =>
 
-  val timeout: FiniteDuration = 1000 milliseconds
+  val pollTimeout: FiniteDuration = 1000 milliseconds
 
   val topic: String
 
@@ -27,8 +27,7 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
     Future {
       val done = Try {
         while (true) {
-          subscribe(consumer.poll(timeout.toMillis))
-          consumer.commit()
+          subscribe(consumer.poll(pollTimeout.toMillis))
         }
         Done
       } recoverWith {
@@ -50,6 +49,10 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
   }
 
   def subscribe(records: Iterator[(K, V)]): Unit
+
+  def commit(): Unit = {
+    consumer.commit()
+  }
 
   def handleNonFatalError(error: Throwable): Try[Done] = {
     Failure(error)
