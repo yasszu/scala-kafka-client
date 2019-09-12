@@ -79,7 +79,6 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
 
   override def onClose(): Unit = {
     log.info("Close a consumer")
-    consumer.commitAsync()
     consumer.close()
   }
 
