@@ -2,6 +2,7 @@ package app
 
 import akka.actor.ActorSystem
 import app.kafka.ConsumerManager
+import app.redis.{RedisClient, RedisConnectionPool}
 import app.util.Logging
 
 import scala.concurrent.ExecutionContext
@@ -14,6 +15,11 @@ object Main extends App with Logging {
 
   val postProducerServer = PostProducerServer()
   val consumerManger = ConsumerManager()
+
+  // Init
+  RedisConnectionPool.init()
+  log.info(RedisClient().ping())
+  RedisConnectionPool.close()
 
   // Start a producer
   postProducerServer.run()
