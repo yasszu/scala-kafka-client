@@ -1,10 +1,11 @@
 package app
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.util.Timeout
 import akka.pattern.ask
-import app.kafka.{Consumer, ConsumerImpl, ConsumerRunner, ConsumerServer, ConsumerServerFactory}
+import akka.util.Timeout
+import app.kafka._
 import example.avro.messages.Post
+import org.apache.kafka.clients.consumer.ConsumerRecord
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -18,11 +19,11 @@ class PostConsumerRunner(val consumer: Consumer[String, Post]) extends ConsumerR
 
   implicit val timeout: Timeout = Timeout(5 seconds)
 
-  override def subscribe(records: Iterator[(String, Post)]): Unit = {
-    records.foreach { case (key: String, post: Post) =>
-      val future = postWriter ? PostWriter.Write(key, post)
+  override def subscribe(records: Iterator[ConsumerRecord[String, Post]]): Unit = {
+    records.foreach { record =>
+      val future = postWriter ? PostWriter.Write(record)
       Await.ready(future, 60 seconds)
-      commit()
+      commit(record)
     }
   }
 

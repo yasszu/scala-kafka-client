@@ -2,6 +2,8 @@ package app.kafka
 
 import akka.Done
 import app.util.Logging
+import org.apache.kafka.clients.consumer.{ConsumerRecord, OffsetAndMetadata}
+import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.WakeupException
 
 import scala.concurrent.duration.{FiniteDuration, _}
@@ -48,10 +50,17 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
     promise.future
   }
 
-  def subscribe(records: Iterator[(K, V)]): Unit
+  def subscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
 
   def commit(): Unit = {
-    consumer.commit()
+    consumer.commitAsync()
+  }
+
+  def commit(record: ConsumerRecord[K, V]): Unit = {
+    val topicPartition = new TopicPartition(record.topic(), record.partition())
+    val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
+    val currentOffset = Map(topicPartition -> offsetAndMetadata)
+    consumer.commitAsync(currentOffset)
   }
 
   def handleNonFatalError(error: Throwable): Try[Done] = {
@@ -70,7 +79,7 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
 
   override def onClose(): Unit = {
     log.info("Close a consumer")
-    consumer.commit()
+    consumer.commitAsync()
     consumer.close()
   }
 
