@@ -27,9 +27,10 @@ class PostProducerServer extends Logging {
 
   def sendRecords(amount: Int): Unit = {
     (1 to amount).foreach { v =>
+      val id = scala.util.Random.nextInt(10000000)
       val timestamp = System.currentTimeMillis()
       val post = new Post()
-      post.setId(v)
+      post.setId(id)
       post.setTimestamp(timestamp)
       val record = createRecord("none", post)
       producer.send(record)

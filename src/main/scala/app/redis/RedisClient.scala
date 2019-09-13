@@ -1,28 +1,31 @@
 package app.redis
 
-import app.util.Logging
-import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
+import redis.clients.jedis.Jedis
+
+import scala.collection.JavaConverters._
 
 trait RedisClient {
 
-  def zadd(key: String, value: String, score: Double): Unit
+  def zadd(key: String, score: Double, member: String): Unit
+
+  def zremRangeByRank(key: String, start: Int, stop: Int): Long
+
+  def zrange(key: String, start: Int, stop: Int): Seq[String]
 
   def ping(): String
 
 }
 
 object RedisClient {
-  def apply(): RedisClient = new RedisClientImpl()
+  def apply(): RedisClient = new RedisClientImpl(RedisConnectionPoolImpl)
 }
 
-class RedisClientImpl extends RedisClient {
+class RedisClientImpl(pool: RedisConnectionPool) extends RedisClient {
 
-  def getClient: Jedis = RedisConnectionPool.getClient
-
-  private def write(command: Jedis => Long): Long = {
+  private def request[T](command: Jedis => T): T = {
     var client: Jedis = null
     try {
-      client = getClient
+      client = pool.getClient
       command(client)
     } finally {
       if (client != null) {
@@ -31,50 +34,29 @@ class RedisClientImpl extends RedisClient {
     }
   }
 
-  private def read(command: Jedis => String): String = {
-    var client: Jedis = null
-    try {
-      client = getClient
-      command(client)
-    } finally {
-      if (client != null) {
-        client.close()
-      }
+  override def zadd(key: String, score: Double, member: String): Unit = {
+    request { client =>
+      client.zadd(key, score, member)
     }
   }
 
 
-  override def zadd(key: String, value: String, score: Double): Unit = {
-    write { client => client.zadd(key, score, value) }
+  override def zremRangeByRank(key: String, start: Int, stop: Int): Long = {
+    request { client =>
+      client.zremrangeByRank(key, start, stop)
+    }
+  }
+
+  override def zrange(key: String, start: Int, stop: Int): Seq[String] = {
+    request { client =>
+      val elements = client.zrange(key, start, stop)
+      elements.asScala.toSeq
+    }
   }
 
   override def ping(): String = {
-    read { client => client.ping() }
-  }
-}
-
-object RedisConnectionPool extends Logging {
-
-  private lazy val pool = new JedisPool(getConfig, "localhost", 6379)
-
-  private def getConfig = new JedisPoolConfig
-
-  def init(): Unit = {
-    var client: Jedis = null
-    try {
-      client = pool.getResource
+    request { client =>
       client.ping()
-      log.info("Redis Connection Pooling is successfully started.")
-    } finally {
-      if (client != null) {
-        client.close()
-      }
     }
   }
-
-  def getClient: Jedis = pool.getResource
-
-  def close(): Unit = pool.close()
-
 }
-

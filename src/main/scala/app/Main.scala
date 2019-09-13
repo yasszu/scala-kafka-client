@@ -2,10 +2,10 @@ package app
 
 import akka.actor.ActorSystem
 import app.kafka.ConsumerManager
-import app.redis.{RedisClient, RedisConnectionPool}
+import app.redis.{RedisClient, RedisConnectionPool, RedisConnectionPoolImpl}
 import app.util.Logging
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 object Main extends App with Logging {
   self =>
@@ -17,9 +17,7 @@ object Main extends App with Logging {
   val consumerManger = ConsumerManager()
 
   // Init
-  RedisConnectionPool.init()
-  log.info(RedisClient().ping())
-  RedisConnectionPool.close()
+  RedisConnectionPoolImpl.init()
 
   // Start a producer
   postProducerServer.run()
@@ -32,6 +30,7 @@ object Main extends App with Logging {
   sys.addShutdownHook {
     log.info("Stopping consumer...")
     consumerManger.shutdown()
+    RedisConnectionPoolImpl.close()
     system.terminate()
   }
 
