@@ -1,6 +1,7 @@
 package app.redis
 
 import app.util.Logging
+import com.typesafe.config.{Config, ConfigFactory}
 import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
 trait RedisConnectionPool {
@@ -11,9 +12,13 @@ trait RedisConnectionPool {
   def getClient: Jedis
 }
 
-object RedisConnectionPoolImpl extends RedisConnectionPool with Logging {
+object JedisConnectionPool extends RedisConnectionPool with Logging {
 
-  private lazy val pool = new JedisPool(getConfig, "localhost", 6379)
+  lazy val config: Config = ConfigFactory.load().getConfig("redis")
+  lazy val host: String = config.getString("host")
+  lazy val port: Int = config.getInt("port")
+
+  private lazy val pool = new JedisPool(getConfig, host, port)
 
   private def getConfig = new JedisPoolConfig
 

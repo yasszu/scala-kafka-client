@@ -1,10 +1,12 @@
 package app.redis
 
+import com.google.inject.Inject
 import redis.clients.jedis.Jedis
 
 import scala.collection.JavaConverters._
 
 trait RedisClient {
+
   def zadd(key: String, score: Double, member: String): Unit
 
   def zremRangeByRank(key: String, start: Int, stop: Int): Long
@@ -12,13 +14,10 @@ trait RedisClient {
   def zrange(key: String, start: Int, stop: Int): Seq[String]
 
   def ping(): String
+
 }
 
-object RedisClient {
-  def apply(): RedisClient = new JedisClient(RedisConnectionPoolImpl)
-}
-
-sealed class JedisClient(pool: RedisConnectionPool) extends RedisClient {
+class JedisClient @Inject()(pool: RedisConnectionPool) extends RedisClient {
 
   private def request[T](command: Jedis => T): T = {
     var client: Jedis = null
@@ -37,7 +36,6 @@ sealed class JedisClient(pool: RedisConnectionPool) extends RedisClient {
       client.zadd(key, score, member)
     }
   }
-
 
   override def zremRangeByRank(key: String, start: Int, stop: Int): Long = {
     request { client =>

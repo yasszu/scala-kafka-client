@@ -1,10 +1,11 @@
 package app
 
 import akka.actor.Actor
-import app.redis.RedisClient
+import app.redis.{RedisClient, RedisModule}
 import app.util.Logging
 import example.avro.messages.Post
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import com.google.inject.Guice
 
 object PostWriter {
 
@@ -17,8 +18,10 @@ object PostWriter {
 class PostWriter extends Actor with Logging {
 
   import PostWriter._
+  import net.codingwell.scalaguice.InjectorExtensions._
 
-  val redis = RedisClient()
+  val injector = Guice.createInjector(new RedisModule())
+  val redis = injector.instance[RedisClient]
 
   override def receive: Receive = {
     case Write(record) =>
