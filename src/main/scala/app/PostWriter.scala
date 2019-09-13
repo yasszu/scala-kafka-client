@@ -23,17 +23,16 @@ class PostWriter extends Actor with Logging {
   override def receive: Receive = {
     case Write(record) =>
       log.info(s"key:${record.key()}, value: {id:${record.value().getId}, timestamp: ${record.value().getTimestamp}}")
-      saveRecord(record)
+      saveRecord(record.value())
       sender() ! Done(record)
   }
 
-  def saveRecord(record: ConsumerRecord[String, Post]): Long = {
+  def saveRecord(post: Post): Long = {
     val key = "post:test"
-    val post = record.value()
-    val score = record.timestamp()
+    val score = post.getTimestamp
     val member = s"${post.getId}"
     redis.zadd(key, score, member)
-    redis.zremRangeByRank(key, 0, -11)
+    redis.zremRangeByRank(key, 0, -51)
   }
 
 }
