@@ -1,12 +1,10 @@
 package app
 
-import akka.actor.{Actor, ActorSystem, Props, Terminated}
-import akka.pattern.pipe
-import app.kafka.ConsumerManager
+import akka.actor.{Actor, Props, Terminated}
 import app.redis.JedisConnectionPool
 import app.util.Logging
 
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.ExecutionContext
 
 case class Shutdown()
 
@@ -17,7 +15,7 @@ class ActorMain extends Actor with Logging {
 
   val postProducerServer = PostProducerServer()
 
-  val postStreamConsumer = context.actorOf(Props[PostStreamConsumer])
+  val postStreamConsumer = context.actorOf(Props[PostStreamConsumerService])
   context.watch(postStreamConsumer)
 
   // Init
@@ -27,7 +25,7 @@ class ActorMain extends Actor with Logging {
   postProducerServer.run()
 
   // Start a consumer
-  postStreamConsumer ! PostStreamConsumer.Run()
+  postStreamConsumer ! PostStreamConsumerService.Run()
 
   override def receive: Receive = {
     case Terminated(_)  => context.stop(self)

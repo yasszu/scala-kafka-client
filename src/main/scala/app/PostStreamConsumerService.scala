@@ -17,9 +17,9 @@ import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-object PostStreamConsumer {
+object PostStreamConsumerService {
 
   case class Run()
 
@@ -27,16 +27,12 @@ object PostStreamConsumer {
 
 }
 
-class PostStreamConsumer extends Actor with Logging {
-
-  import PostStreamConsumer._
+class PostStreamConsumer()(implicit system: ActorSystem) {
 
   val groupId = "PostService"
   val topic = "posts"
 
-  implicit val system: ActorSystem = context.system
   implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val dispatcher: ExecutionContextExecutor = system.dispatcher
   implicit val timeout: Timeout = Timeout(30.seconds)
 
   lazy val config: Config = system.settings.config
@@ -46,8 +42,6 @@ class PostStreamConsumer extends Actor with Logging {
   lazy val schemaRegistryUrl: String = kafkaConsumerConfig.getString("schema.registry.url")
   lazy val avroDeserializer: String = kafkaConsumerConfig.getString("avro.deserializer")
   lazy val committerSettings = CommitterSettings(system)
-
-  val postWriter: ActorRef = context.actorOf(Props[PostWriter])
 
   val kafkaAvroSerDeConfig: Map[String, Any] = Map[String, Any](
     AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> schemaRegistryUrl,
@@ -66,14 +60,38 @@ class PostStreamConsumer extends Actor with Logging {
       .withGroupId(groupId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
 
-  val consumer: RunnableGraph[DrainingControl[Done]] =
-    Consumer
-      .committableSource(consumerSettings, Subscriptions.topics(topic))
-      .mapAsync(1) { msg =>
-        subscribe(msg.record).map(_ => msg.committableOffset)
-      }
-      .toMat(Committer.sink(committerSettings))(Keep.both)
-      .mapMaterializedValue(DrainingControl.apply)
+  def run(subscribe: ConsumerRecord[String, Post] => Unit)(implicit exec: ExecutionContext) = {
+
+    val consumer: RunnableGraph[DrainingControl[Done]] =
+      Consumer
+        .committableSource(consumerSettings, Subscriptions.topics(topic))
+        .mapAsync(1) { msg =>
+          Future{
+            subscribe(msg.record)
+            Done
+          }.map(_ => msg.committableOffset)
+        }
+        .toMat(Committer.sink(committerSettings))(Keep.both)
+        .mapMaterializedValue(DrainingControl.apply)
+
+    consumer.run()
+  }
+
+}
+
+class PostStreamConsumerService extends Actor with Logging {
+
+  import PostStreamConsumerService._
+
+  val groupId = "PostService"
+  val topic = "posts"
+
+  implicit val system: ActorSystem = context.system
+  implicit val dispatcher: ExecutionContextExecutor = system.dispatcher
+
+  val postWriter: ActorRef = context.actorOf(Props[PostWriter])
+
+  val streamConsumer = new PostStreamConsumer()
 
   def subscribe(record: ConsumerRecord[String, Post]) = Future {
     self ! Subscribe(record)
@@ -81,7 +99,7 @@ class PostStreamConsumer extends Actor with Logging {
 
   def runConsumer: DrainingControl[Done] = {
     log.info("Run consumer")
-    consumer.run()
+    streamConsumer.run(subscribe)
   }
 
   override def receive: Receive = waiting
