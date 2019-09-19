@@ -52,9 +52,7 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
 
   def subscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
 
-  def commit(): Unit = {
-    consumer.commitAsync()
-  }
+  def commit(): Unit = consumer.commitAsync()
 
   def commit(record: ConsumerRecord[K, V]): Unit = {
     val topicPartition = new TopicPartition(record.topic(), record.partition())
