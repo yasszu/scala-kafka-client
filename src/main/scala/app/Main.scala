@@ -2,6 +2,7 @@ package app
 
 import akka.actor.ActorSystem
 import app.kafka.ConsumerManager
+import app.redis.JedisConnectionPool
 import app.util.Logging
 
 import scala.concurrent.ExecutionContext
@@ -15,6 +16,9 @@ object Main extends App with Logging {
   val postProducerServer = PostProducerServer()
   val consumerManger = ConsumerManager()
 
+  // Init
+  JedisConnectionPool.init()
+
   // Start a producer
   postProducerServer.run()
 
@@ -26,6 +30,7 @@ object Main extends App with Logging {
   sys.addShutdownHook {
     log.info("Stopping consumer...")
     consumerManger.shutdown()
+    JedisConnectionPool.close()
     system.terminate()
   }
 

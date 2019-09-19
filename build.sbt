@@ -15,7 +15,8 @@ lazy val root = (project in file("."))
       "org.apache.avro" % "avro" % "1.8.2",
       "io.confluent" % "kafka-avro-serializer" % "4.0.0",
       "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.13",
-      "net.codingwell" %% "scala-guice" % "4.2.6"
+      "net.codingwell" %% "scala-guice" % "4.2.6",
+      "redis.clients" % "jedis" % "3.1.0"
     )
   )
 
