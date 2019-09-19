@@ -1,5 +1,7 @@
 package app
 
+import java.sql.Timestamp
+
 import akka.actor.Actor
 import app.redis.{RedisClient, RedisModule}
 import app.util.Logging
@@ -25,7 +27,8 @@ class PostWriter extends Actor with Logging {
 
   override def receive: Receive = {
     case Write(record) =>
-      log.info(s"key:${record.key()}, value: {id:${record.value().getId}, timestamp: ${record.value().getTimestamp}}")
+      val date = "%tY-%<tm-%<td %<tH:%<tM:%<tS" format new Timestamp(record.value().getTimestamp)
+      log.info(s"key:${record.key()}, value: {id:${record.value().getId}, date: $date}")
       saveRecord(record.value())
       sender() ! Done(record)
   }

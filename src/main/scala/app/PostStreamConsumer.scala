@@ -1,7 +1,7 @@
 package app
 
 import akka.Done
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 import akka.kafka.scaladsl.Consumer.DrainingControl
 import akka.kafka.scaladsl.{Committer, Consumer}
 import akka.kafka.{CommitterSettings, ConsumerSettings, Subscriptions}
@@ -23,7 +23,7 @@ object PostStreamConsumer {
 
   case class Run()
 
-  case class Shutdown()
+  case class Subscribe(record: ConsumerRecord[String, Post])
 
 }
 
@@ -31,13 +31,13 @@ class PostStreamConsumer extends Actor with Logging {
 
   import PostStreamConsumer._
 
+  val groupId = "PostService"
+  val topic = "posts"
+
   implicit val system: ActorSystem = context.system
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val dispatcher: ExecutionContextExecutor = system.dispatcher
   implicit val timeout: Timeout = Timeout(30.seconds)
-
-  val groupId = "PostService"
-  val topic = "posts"
 
   lazy val config: Config = system.settings.config
   lazy val akkaKafkaConfig: Config = config.getConfig("akka.kafka.consumer")
@@ -47,49 +47,54 @@ class PostStreamConsumer extends Actor with Logging {
   lazy val avroDeserializer: String = kafkaConsumerConfig.getString("avro.deserializer")
   lazy val committerSettings = CommitterSettings(system)
 
-  val postWriter: ActorRef = context.actorOf(Props(new PostWriter))
+  val postWriter: ActorRef = context.actorOf(Props[PostWriter])
 
   val kafkaAvroSerDeConfig: Map[String, Any] = Map[String, Any](
     AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG -> schemaRegistryUrl,
     KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG -> true.toString
   )
 
-  val consumerSettings: ConsumerSettings[String, Post] = {
+  val valueDeserializer: Deserializer[Post] = {
     val kafkaAvroDeserializer = new KafkaAvroDeserializer()
     kafkaAvroDeserializer.configure(kafkaAvroSerDeConfig.asJava, false)
-    val deserializer = kafkaAvroDeserializer.asInstanceOf[Deserializer[Post]]
+    kafkaAvroDeserializer.asInstanceOf[Deserializer[Post]]
+  }
 
-    ConsumerSettings(akkaKafkaConfig, new StringDeserializer, deserializer)
+  val consumerSettings: ConsumerSettings[String, Post] =
+    ConsumerSettings(akkaKafkaConfig, new StringDeserializer, valueDeserializer)
       .withBootstrapServers(bootstrapServer)
       .withGroupId(groupId)
       .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
+
+  val consumer: RunnableGraph[DrainingControl[Done]] =
+    Consumer
+      .committableSource(consumerSettings, Subscriptions.topics(topic))
+      .mapAsync(1) { msg =>
+        subscribe(msg.record).map(_ => msg.committableOffset)
+      }
+      .toMat(Committer.sink(committerSettings))(Keep.both)
+      .mapMaterializedValue(DrainingControl.apply)
+
+  def subscribe(record: ConsumerRecord[String, Post]) = Future {
+    self ! Subscribe(record)
   }
 
-  val consumer: RunnableGraph[DrainingControl[Done]] = Consumer
-    .committableSource(consumerSettings, Subscriptions.topics(topic))
-    .mapAsync(1) { msg =>
-      subscribe(msg.record)
-        .map(_ => msg.committableOffset)
-    }
-    .toMat(Committer.sink(committerSettings))(Keep.both)
-    .mapMaterializedValue(DrainingControl.apply)
-
-  def subscribe(record: ConsumerRecord[String, Post]): Future[Done] = Future {
-    postWriter ! PostWriter.Write(record)
-    Done
+  def runConsumer: DrainingControl[Done] = {
+    log.info("Run consumer")
+    consumer.run()
   }
 
-  override def receive: Receive = start
+  override def receive: Receive = waiting
 
-  def start: Receive = {
-    case Run =>
-      val control = consumer.run()
-      log.info("Start consumer")
-      context.become(running(control))
+  def waiting: Receive = {
+    case Run() => context.become(running(runConsumer))
   }
 
   def running(control: DrainingControl[Done]): Receive = {
-    case Shutdown() =>
+    case Subscribe(record) =>
+      postWriter ! PostWriter.Write(record)
+    case Terminated(_) =>
+      log.info("Stopping consumer")
       control.drainAndShutdown()
       context.stop(self)
   }

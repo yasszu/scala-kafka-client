@@ -20,5 +20,5 @@ $ docker-compose exec broker kafka-topics --list --bootstrap-server localhost:90
 ## Start the application
 
 ```
-$ sbt run
+$ sbt "runMain akka.Main app.ActorMain"
 ```

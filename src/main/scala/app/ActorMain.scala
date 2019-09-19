@@ -1,6 +1,6 @@
 package app
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Props, Terminated}
 import akka.pattern.pipe
 import app.kafka.ConsumerManager
 import app.redis.JedisConnectionPool
@@ -15,9 +15,10 @@ class ActorMain extends Actor with Logging {
   implicit val exec: ExecutionContext = context.dispatcher
   implicit val system = context.system
 
-  val postStreamConsumer = context.actorOf(Props[PostStreamConsumer], "postStreamConsumer")
   val postProducerServer = PostProducerServer()
-  val consumerManger = ConsumerManager()
+
+  val postStreamConsumer = context.actorOf(Props[PostStreamConsumer])
+  context.watch(postStreamConsumer)
 
   // Init
   JedisConnectionPool.init()
@@ -26,22 +27,16 @@ class ActorMain extends Actor with Logging {
   postProducerServer.run()
 
   // Start a consumer
-  postStreamConsumer ! PostStreamConsumer.Run
-
-  // Stop the consumer when the VM exits
-  val promise = Promise[Shutdown]()
-  sys.addShutdownHook {
-    promise success Shutdown()
-  }
-
-  promise.future pipeTo self
+  postStreamConsumer ! PostStreamConsumer.Run()
 
   override def receive: Receive = {
-    case Shutdown =>
-      log.info("Stopping consumer...")
-      consumerManger.shutdown()
-      JedisConnectionPool.close()
-      system.terminate()
+    case Terminated(_)  => context.stop(self)
+  }
+
+  override def postStop(): Unit = {
+    log.info("Stopping consumer...")
+    JedisConnectionPool.close()
+    context.stop(self)
   }
 
 }
