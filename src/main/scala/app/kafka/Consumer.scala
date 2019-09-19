@@ -19,6 +19,8 @@ trait Consumer[K, V] {
 
   def commitAsync(offset: Map[TopicPartition, OffsetAndMetadata])
 
+  def commit(record: ConsumerRecord[K, V])
+
   def wakeup(): Unit
 
   def close(): Unit
@@ -82,4 +84,10 @@ class ConsumerImpl[K, V](groupId: String, props: Map[String, String] = Map.empty
 
   override def close(): Unit = kafkaConsumer.close()
 
+  override def commit(record: ConsumerRecord[K, V]): Unit = {
+    val topicPartition = new TopicPartition(record.topic(), record.partition())
+    val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
+    val currentOffset = Map(topicPartition -> offsetAndMetadata)
+    commitAsync(currentOffset)
+  }
 }

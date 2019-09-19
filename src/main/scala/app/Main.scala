@@ -23,7 +23,7 @@ object Main extends App with Logging {
   postProducerServer.run()
 
   // Start a consumer
-  consumerManger.addFactory(new PostConsumerServerFactory())
+//  consumerManger.addFactory(new PostConsumerServerFactory())
   consumerManger.runAll()
 
   // Stop the consumer when the VM exits
