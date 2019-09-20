@@ -19,7 +19,7 @@ object Producer {
 
 class ProducerImpl[K, V](props: Map[String, String]) extends Producer[K, V] {
 
-  lazy val config: Config = ConfigFactory.load().getConfig("kafka.producer")
+  lazy val config: Config = ConfigFactory.load().getConfig("broker.producer")
   lazy val bootstrapServer: String = config.getString("bootstrap.servers")
   lazy val acks: String = config.getString("acks")
   lazy val schemaRegistryUrl: String = config.getString("schema.registry.url")

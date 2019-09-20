@@ -30,7 +30,7 @@ class ConsumerImpl[K, V](groupId: String, props: Map[String, String] = Map.empty
 
   val GROUP_ID = "group.id"
 
-  lazy val config: Config = ConfigFactory.load().getConfig("kafka.consumer")
+  lazy val config: Config = ConfigFactory.load().getConfig("broker.consumer")
   lazy val bootstrapServer: String = config.getString("bootstrap.servers")
   lazy val enableAutoCommit: String = config.getString("enable.auto.commit")
   lazy val autoCommitIntervalMs: String = config.getString("auto.commit.interval.ms")

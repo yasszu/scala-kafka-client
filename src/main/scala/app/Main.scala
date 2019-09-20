@@ -1,7 +1,7 @@
 package app
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Terminated}
-import app.kafka.{ConsumerServer, ConsumerServerActor}
+import app.kafka.ConsumerServerActor
 import app.redis.JedisConnectionPool
 import app.util.Logging
 

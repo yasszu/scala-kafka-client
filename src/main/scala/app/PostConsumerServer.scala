@@ -1,6 +1,6 @@
 package app
 
-import akka.actor.{ActorRef, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{ActorRef, Props}
 import app.kafka._
 import example.avro.messages.Post
 import org.apache.kafka.clients.consumer.ConsumerRecord
