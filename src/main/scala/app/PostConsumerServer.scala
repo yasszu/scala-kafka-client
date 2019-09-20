@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-object PostConsumerRunner {
+object PostConsumerServer {
 
   case class Run()
 
@@ -27,13 +27,13 @@ object PostConsumerRunner {
 
   def consumer = new ConsumerImpl[String, Post](groupId)
 
-  def props(): Props = Props(new PostConsumerRunner(topic, consumer))
+  def props(): Props = Props(new PostConsumerServer(topic, consumer))
 
 }
 
-class PostConsumerRunner(topic: String, consumer: Consumer[String, Post]) extends Actor with Logging {
+class PostConsumerServer(topic: String, consumer: Consumer[String, Post]) extends Actor with Logging {
 
-  import PostConsumerRunner._
+  import PostConsumerServer._
 
   implicit val timeout: Timeout = Timeout(5 seconds)
   implicit val exec: ExecutionContextExecutor = context.dispatcher
