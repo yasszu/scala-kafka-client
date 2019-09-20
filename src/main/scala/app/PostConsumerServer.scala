@@ -25,9 +25,10 @@ object PostConsumerServer {
 
   val groupId = "PostService"
 
-  def consumer = new ConsumerImpl[String, Post](groupId)
-
-  def props(): Props = Props(new PostConsumerServer(topic, consumer))
+  def props(): Props = {
+    val consumer = new ConsumerImpl[String, Post](groupId)
+    Props(new PostConsumerServer(topic, consumer))
+  }
 
 }
 

@@ -6,7 +6,7 @@ import app.util.Logging
 
 import scala.concurrent.ExecutionContext
 
-class ActorMain extends Actor with Logging {
+class Main extends Actor with Logging {
 
   implicit val system: ActorSystem = context.system
   implicit val ec: ExecutionContext = context.dispatcher
