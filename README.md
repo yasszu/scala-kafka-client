@@ -19,6 +19,12 @@ $ docker-compose exec broker kafka-topics --list --bootstrap-server localhost:90
 
 ## Start the application
 
+### Develop
+```
+sbt -Dconfig.resource=application_dev.conf "runMain akka.Main app.Main"
+```
+
+### Production
 ```
 $ sbt "runMain akka.Main app.Main"
 ```
