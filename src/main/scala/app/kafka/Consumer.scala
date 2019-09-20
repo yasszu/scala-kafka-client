@@ -68,8 +68,7 @@ class ConsumerImpl[K, V](groupId: String, props: Map[String, String] = Map.empty
   }
 
   override def poll(timeout: Long): Iterator[ConsumerRecord[K, V]] = {
-    val records = kafkaConsumer.poll(timeout).iterator().asScala
-    records
+    kafkaConsumer.poll(timeout).iterator().asScala
   }
 
   override def commit(): Unit = kafkaConsumer.commitAsync()

@@ -2,12 +2,13 @@ package app
 
 import java.sql.Timestamp
 
-import akka.actor.Actor
+import akka.actor.{Actor, Props}
 import app.redis.{RedisClient, RedisModule}
 import app.util.Logging
 import example.avro.messages.Post
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import com.google.inject.Guice
+import com.google.inject.{Guice, Injector}
+import net.codingwell.scalaguice.InjectorExtensions._
 
 object PostWriter {
 
@@ -15,15 +16,17 @@ object PostWriter {
 
   case class Write(record: ConsumerRecord[String, Post])
 
+  val injector: Injector = Guice.createInjector(new RedisModule())
+
+  def redisClient(): RedisClient = injector.instance[RedisClient]
+
+  def props(): Props = Props(new PostWriter(redisClient()))
+
 }
 
-class PostWriter extends Actor with Logging {
+class PostWriter(redis: RedisClient) extends Actor with Logging {
 
   import PostWriter._
-  import net.codingwell.scalaguice.InjectorExtensions._
-
-  val injector = Guice.createInjector(new RedisModule())
-  val redis = injector.instance[RedisClient]
 
   override def receive: Receive = {
     case Write(record) =>

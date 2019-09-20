@@ -14,16 +14,15 @@ object PostConsumerServer {
 
   val groupId = "PostService"
 
-  def props(): Props = {
-    val consumer = new ConsumerImpl[String, Post](groupId)
-    Props(new PostConsumerServer(topic, consumer))
-  }
+  def getConsumer: Consumer[String, Post] = new ConsumerImpl[String, Post](groupId)
+
+  def props(): Props = Props(new PostConsumerServer(topic, getConsumer))
 
 }
 
 class PostConsumerServer(topic: String, consumer: Consumer[String, Post]) extends ConsumerServerActor[String, Post] {
 
-  val postWriter: ActorRef = context.actorOf(Props[PostWriter])
+  val postWriter: ActorRef = context.actorOf(PostWriter.props())
 
   override def onStart(): Unit = {
     consumer.subscribe(topic)
