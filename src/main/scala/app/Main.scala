@@ -1,6 +1,7 @@
 package app
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Terminated}
+import app.kafka.{ConsumerServer, ConsumerServerActor}
 import app.redis.JedisConnectionPool
 import app.util.Logging
 
@@ -13,8 +14,8 @@ class Main extends Actor with Logging {
 
   val postProducerServer = PostProducerServer()
 
-  val postConsumerRunner: ActorRef = context.actorOf(PostConsumerServer.props())
-  context.watch(postConsumerRunner)
+  val postConsumerServer: ActorRef = context.actorOf(PostConsumerServer.props())
+  context.watch(postConsumerServer)
 
   // Init
   JedisConnectionPool.init()
@@ -23,7 +24,7 @@ class Main extends Actor with Logging {
   postProducerServer.run()
 
   // Start a consumer
-  postConsumerRunner ! PostConsumerServer.Run()
+  postConsumerServer ! ConsumerServerActor.Run()
 
   override def receive: Receive = {
     case Terminated(_)  => context.stop(self)
