@@ -22,3 +22,10 @@ $ docker-compose exec broker kafka-topics --list --bootstrap-server localhost:90
 ```
 $ sbt "runMain akka.Main app.Main"
 ```
+
+## Redis
+Check data
+```
+$ docker-compose exec redis redis-cli ZRANGE post:test 0 -1
+
+```
