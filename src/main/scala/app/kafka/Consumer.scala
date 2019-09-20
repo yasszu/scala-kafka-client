@@ -15,9 +15,7 @@ trait Consumer[K, V] {
 
   def poll(timeout: Long): Iterator[ConsumerRecord[K, V]]
 
-  def commitAsync(): Unit
-
-  def commitAsync(offset: Map[TopicPartition, OffsetAndMetadata])
+  def commit(): Unit
 
   def commit(record: ConsumerRecord[K, V])
 
@@ -74,15 +72,7 @@ class ConsumerImpl[K, V](groupId: String, props: Map[String, String] = Map.empty
     records
   }
 
-  override def commitAsync(): Unit = kafkaConsumer.commitAsync()
-
-  override def commitAsync(offset: Map[TopicPartition, OffsetAndMetadata]): Unit = {
-    kafkaConsumer.commitAsync(offset.asJava, null)
-  }
-
-  override def wakeup(): Unit = kafkaConsumer.wakeup()
-
-  override def close(): Unit = kafkaConsumer.close()
+  override def commit(): Unit = kafkaConsumer.commitAsync()
 
   override def commit(record: ConsumerRecord[K, V]): Unit = {
     val topicPartition = new TopicPartition(record.topic(), record.partition())
@@ -90,4 +80,13 @@ class ConsumerImpl[K, V](groupId: String, props: Map[String, String] = Map.empty
     val currentOffset = Map(topicPartition -> offsetAndMetadata)
     commitAsync(currentOffset)
   }
+
+  def commitAsync(offset: Map[TopicPartition, OffsetAndMetadata]): Unit = {
+    kafkaConsumer.commitAsync(offset.asJava, null)
+  }
+
+  override def wakeup(): Unit = kafkaConsumer.wakeup()
+
+  override def close(): Unit = kafkaConsumer.close()
+
 }

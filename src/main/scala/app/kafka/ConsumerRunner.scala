@@ -52,14 +52,14 @@ trait ConsumerRunner[K, V] extends ConsumerServer with Logging {
 
   def subscribe(records: Iterator[ConsumerRecord[K, V]]): Unit
 
-  def commit(): Unit = consumer.commitAsync()
+  def commit(): Unit = consumer.commit()
 
-  def commit(record: ConsumerRecord[K, V]): Unit = {
-    val topicPartition = new TopicPartition(record.topic(), record.partition())
-    val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
-    val currentOffset = Map(topicPartition -> offsetAndMetadata)
-    consumer.commitAsync(currentOffset)
-  }
+//  def commit(record: ConsumerRecord[K, V]): Unit = {
+//    val topicPartition = new TopicPartition(record.topic(), record.partition())
+//    val offsetAndMetadata = new OffsetAndMetadata(record.offset() + 1)
+//    val currentOffset = Map(topicPartition -> offsetAndMetadata)
+//    consumer.commitAsync(currentOffset)
+//  }
 
   def handleNonFatalError(error: Throwable): Try[Done] = {
     Failure(error)

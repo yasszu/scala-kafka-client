@@ -1,11 +1,8 @@
 package app
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
-import app.kafka.{ConsumerImpl, ConsumerManager}
+import akka.actor.{Actor, ActorRef, ActorSystem, Terminated}
 import app.redis.JedisConnectionPool
 import app.util.Logging
-import PostConsumerRunner._
-import example.avro.messages.Post
 
 import scala.concurrent.ExecutionContext
 
@@ -16,15 +13,9 @@ class ActorMain extends Actor with Logging {
   implicit val system: ActorSystem = context.system
   implicit val ec: ExecutionContext = context.dispatcher
 
-//  implicit val kafkaSystem: ActorSystem = ActorSystem("kafka-consumer")
-//  implicit val kafkaExec: ExecutionContext = kafkaSystem.dispatcher
-
   val postProducerServer = PostProducerServer()
 
-  val postConsumerRunner: ActorRef = {
-    val consumer = new ConsumerImpl[String, Post]("PostService")
-    context.actorOf(Props(classOf[PostConsumerRunner], consumer))
-  }
+  val postConsumerRunner: ActorRef = context.actorOf(PostConsumerRunner.props())
   context.watch(postConsumerRunner)
 
   // Init
